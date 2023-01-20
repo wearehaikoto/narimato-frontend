@@ -23,125 +23,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     </script>
 </head>
 
@@ -159,18 +40,21 @@
     }
 </style>
 
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script type="module">
     import * as THREE from "three"
     import {OrbitControls} from "OrbitControls"
 
-    class Noel {
+
+    class Trinity {
         scene = null
         renderer = null
         camera = null
         controls = null
-        triangles = []
+        socket = io('http://vps2.insource.hu:21000')
 
-        init = () => {
+        constructor() {
+
             this.scene = new THREE.Scene()
             this.scene.background = new THREE.Color(0xcccccc)
             this.scene.fog = new THREE.FogExp2(0xcccccc, 0.002)
@@ -185,12 +69,7 @@
             this.renderer.setSize(window.innerWidth, window.innerHeight)
             document.body.appendChild(this.renderer.domElement)
 
-            this.camera = new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000
-            )
+            this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
             this.camera.position.set(5, 5, 5)
 
             this.controls = new OrbitControls(
@@ -208,9 +87,18 @@
 
             window.addEventListener("resize", this.onWindowResize)
 
-            this.drawIcosahedron()
+            // this.drawIcosahedron()
 
-            return this
+            this.socket.on("updateTriangle", (triangle) => {
+                this.updateTriangle(triangle)
+            });
+
+            this.socket.on("reloadTriangle", () => {
+                console.log('reloadTriangle')
+                this.loadTriangles();
+            });
+
+            this.loadTriangles();
         }
 
         clickListener = () => {
@@ -242,6 +130,8 @@
                         return
                     }
 
+                    console.log(selectedItem)
+
                     if (selectedItem.geometry.attributes.clickCount.array[0] >= 10) {
                         if (this.needSubdivide()) {
                             this.subdivideIco()
@@ -256,93 +146,28 @@
         }
 
         needSubdivide = () => {
-            let needSubdivide = true
-            this.triangles.forEach((row) => {
-                if (row.geometry.attributes.clickCount.array[0] < 10) {
-                    needSubdivide = false
-                }
-            })
-            console.log(needSubdivide)
-            return needSubdivide
+            return false
         }
 
-        drawIcosahedron = () => {
-            const X = 0.525731112119133606
-            const Z = 0.85065080835203993
-
-            const vertices = [
-                [-X, 0.0, Z],
-                [X, 0.0, Z],
-                [-X, 0.0, -Z],
-                [X, 0.0, -Z],
-                [0.0, Z, X],
-                [0.0, Z, -X],
-                [0.0, -Z, X],
-                [0.0, -Z, -X],
-                [Z, X, 0.0],
-                [-Z, X, 0.0],
-                [Z, -X, 0.0],
-                [-Z, -X, 0.0],
-            ]
-
-            const indices = [
-                [0, 4, 1],
-                [0, 9, 4],
-                [9, 5, 4],
-                [4, 5, 8],
-                [4, 8, 1],
-                [8, 10, 1],
-                [8, 3, 10],
-                [5, 3, 8],
-                [5, 2, 3],
-                [2, 7, 3],
-                [7, 10, 3],
-                [7, 6, 10],
-                [7, 11, 6],
-                [11, 0, 6],
-                [0, 1, 6],
-                [6, 1, 10],
-                [9, 0, 11],
-                [9, 11, 2],
-                [9, 2, 5],
-                [7, 2, 11],
-            ]
-
-            for (let i = 0; i < indices.length; i++) {
-                const ind = indices[i]
+        drawIcosahedron = (result) => {
+            this.clear()
+            result.forEach(row => {
                 const vert = new Float32Array([
-                    vertices[ind[1]][0], vertices[ind[1]][1], vertices[ind[1]][2],
-                    vertices[ind[0]][0], vertices[ind[0]][1], vertices[ind[0]][2],
-                    vertices[ind[2]][0], vertices[ind[2]][1], vertices[ind[2]][2],
+                    row.pos1.x, row.pos1.y, row.pos1.z,
+                    row.pos2.x, row.pos2.y, row.pos2.z,
+                    row.pos3.x, row.pos3.y, row.pos3.z,
                 ])
 
-                this.triangles.push(this.drawTriangle(
+                this.drawTriangle(
+                    row.uuid,
                     this.scene,
                     new THREE.MeshBasicMaterial({color: 0xffffff}),
-                    vert
-                ))
-            }
+                    vert,
+                    row.click
+                )
+            })
 
             return this
-        }
-
-        subdivideIco = () => {
-            let newTriangles = []
-            this.triangles.forEach((row) => {
-                newTriangles = newTriangles.concat(this.subdivideMesh(row))
-            })
-
-            this.triangles = [];
-            // this.triangles = newTriangles
-            this.clear()
-            newTriangles.forEach((row) => {
-                this.triangles.push(this.drawTriangle(
-                    this.scene,
-                    new THREE.MeshBasicMaterial({color: 0xffffff}),
-                    row
-                ))
-            })
-
         }
 
         clear = () => {
@@ -352,60 +177,13 @@
             }
         }
 
-        subdivideMesh = (triangle) => {
-            console.log(triangle)
-            const pos = triangle.geometry.attributes.position.array
-
-            const v12 = {x: pos[0] + pos[3], y: pos[1] + pos[4], z: pos[2] + pos[5]}
-            const v23 = {x: pos[3] + pos[6], y: pos[4] + pos[7], z: pos[5] + pos[8]}
-            const v31 = {x: pos[6] + pos[0], y: pos[7] + pos[1], z: pos[8] + pos[2]}
-
-            const pos1 = {x: pos[0], y: pos[1], z: pos[2]} // felső
-            const pos2 = {x: pos[3], y: pos[4], z: pos[5]} // bal
-            const pos3 = {x: pos[6], y: pos[7], z: pos[8]} // jobb
-
-            return [
-                this.triangle(pos1, v12, v31),
-                this.triangle(pos2, v23, v12),
-                this.triangle(pos3, v31, v23),
-                this.triangle(v12, v23, v31)
-            ]
-        }
-
-        triangle = (pos1, pos2, pos3) => {
-            const pos1Mag = Math.sqrt(pos1.x * pos1.x + pos1.y * pos1.y + pos1.z * pos1.z)
-            const pos2Mag = Math.sqrt(pos2.x * pos2.x + pos2.y * pos2.y + pos2.z * pos2.z)
-            const pos3Mag = Math.sqrt(pos3.x * pos3.x + pos3.y * pos3.y + pos3.z * pos3.z)
-
-            if (pos1Mag !== 0) {
-                pos1.x *= (1 / pos1Mag)
-                pos1.y *= (1 / pos1Mag)
-                pos1.z *= (1 / pos1Mag)
-            }
-            if (pos2Mag !== 0) {
-                pos2.x *= (1 / pos2Mag)
-                pos2.y *= (1 / pos2Mag)
-                pos2.z *= (1 / pos2Mag)
-            }
-            if (pos3Mag !== 0) {
-                pos3.x *= (1 / pos3Mag)
-                pos3.y *= (1 / pos3Mag)
-                pos3.z *= (1 / pos3Mag)
-            }
-
-            return new Float32Array([
-                pos1.x, pos1.y, pos1.z,
-                pos2.x, pos2.y, pos2.z,
-                pos3.x, pos3.y, pos3.z,
-            ])
-        }
-
         onWindowResize = () => {
             camera.aspect = window.innerWidth / window.innerHeight
             camera.updateProjectionMatrix()
 
             renderer.setSize(window.innerWidth, window.innerHeight)
         }
+
         animate = () => {
             requestAnimationFrame(this.animate)
             this.controls.update()
@@ -413,23 +191,37 @@
 
             return this
         }
+
         render = () => {
             this.renderer.render(this.scene, this.camera)
         }
 
-        // Increase grayness of the face on click
+        updateTriangle(triangle) {
+            const object = this.scene.getObjectByProperty('uuid', triangle.uuid);
+            const percent = 100 - triangle.click * 10
+
+            object.geometry.attributes.clickCount.array[0] = triangle.click
+            object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
+        }
+
         nextFace = (object) => {
+            this.socket.emit('clickTriangle', object.uuid);
             const clickCount = object.geometry.attributes.clickCount.array[0]++
             const percent = 100 - clickCount * 10
 
             object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
         }
 
-        drawTriangle = (parent, material, vertices, click = 1, needBorder = true) => {
+        drawTriangle = (uuid, parent, material, vertices, click = 1, needBorder = true) => {
             if (needBorder) {
-                this.drawTriangle(parent, new THREE.MeshStandardMaterial({wireframe: true}), vertices, 10, false)
-            }
+                this.drawTriangle(null, parent, new THREE.MeshStandardMaterial({
+                    wireframe: true,
+                    color: 0xff0000
+                }), vertices, 10, false)
 
+                const percent = 100 - click * 10
+                material.color.setRGB(percent / 100, percent / 100, percent / 100)
+            }
             const clickCount = new Float32Array([click])
             const geometry = new THREE.BufferGeometry()
 
@@ -438,14 +230,23 @@
             geometry.setAttribute("clickCount", new THREE.BufferAttribute(clickCount, 3))
 
             const triangle = new THREE.Mesh(geometry, material)
-            parent.add(triangle)
+            if (uuid !== null) triangle.uuid = uuid
 
-            return triangle
+            parent.add(triangle)
+        }
+
+        loadTriangles() {
+
+            fetch("http://vps2.insource.hu:21080/triangles", {
+                method: 'GET',
+                redirect: 'follow'
+            })
+                .then(response => response.text())
+                .then(result => this.drawIcosahedron(JSON.parse(result)))
+                .catch(error => console.log('error', error))
         }
     }
 
-    const noel = new Noel().init().clickListener().animate()
-
-    // noel.subdivideIco()
+    new Trinity().clickListener().animate()
 </script>
 </html>
