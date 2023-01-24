@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>icosahedron</title>
+    <title>Finding Narimato</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
     <link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css"/>
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500;700&display=swap" rel="stylesheet">
+
 
     <script type="importmap">
         {"imports": {"three": "https://unpkg.com/three@0.138.0/build/three.module.js","OrbitControls": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js"}}
@@ -19,19 +24,42 @@
 
 
 
-
-
-
-
     </script>
 </head>
 
-<body>
+<body class="overflow-hidden">
+<div class="fixed left-5 top-5 text-left gap-5 p-3">
+    <div class="text-xl mb-5" id="levelName"></div>
+    <div class="grid grid-cols-[200px_50px] gap-2">
+        <p>Level:</p>
+        <span id="level">0</span>
+
+        <p>Your click:</p>
+        <span id="yourClick">0</span>
+
+        <p>Clicks of this world:</p>
+        <span id="currentClick">0</span>
+
+        <p>All the clicks in the universe:</p>
+        <span id="allClick">0</span>
+
+        <p>Number of terraformed worlds:</p>
+        <span id="reload">0</span>
+    </div>
+</div>
+
+<a href="https://insource.hu" target="_blank">
+    <div class="fixed bottom-0 -right-[88px] w-[120px] h-[32px] transition-all duration-300 flex items-center cursor-pointer bg-white hover:right-0">
+        <img src="/is.webp" alt="fejlesztő logója" class="max-w-[32px] p-[8px]">
+        <p class="text-xs text-black">Developed by</p>
+    </div>
+</a>
 </body>
 
 <style>
     body {
         background-color: #ccc;
+        font-family: 'Inter', sans-serif;
         color: #000;
     }
 
@@ -40,20 +68,38 @@
     }
 </style>
 
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    clifford: '#da373d',
+                }
+            }
+        }
+    }
+</script>
+
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script type="module">
     import * as THREE from "three"
     import {OrbitControls} from "OrbitControls"
 
 
-    class Trinity {
+    class Narimato {
         scene = null
         renderer = null
         camera = null
         controls = null
-        socket = io('http://vps2.insource.hu:21000')
+        yourClick = 0
+        host = 'https://narimato.com:21000'
+        socket = io(this.host, {secure: true})
+        levelName = ['Realm of Ice', 'The Source', 'Under the Rocks', 'Chase the Sun', 'Unknown Step']
 
         constructor() {
+
+            this.yourClick = getCookie('click') ?? 0
 
             this.scene = new THREE.Scene()
             this.scene.background = new THREE.Color(0xcccccc)
@@ -87,23 +133,26 @@
 
             window.addEventListener("resize", this.onWindowResize)
 
-            // this.drawIcosahedron()
+            this.socket.on("update", (data) => {
+                this.updateTriangle(data.triangle)
+                this.updateText(data.allClick, data.currentClick, data.level, data.reload)
+            })
 
-            this.socket.on("updateTriangle", (triangle) => {
-                this.updateTriangle(triangle)
-            });
-
-            this.socket.on("reloadTriangle", () => {
+            this.socket.on("reloadTriangle", (data) => {
+                console.log(data)
+                if (data !== undefined) {
+                    this.updateText(data.allClick, data.currentClick, data.level, data.reload)
+                }
                 console.log('reloadTriangle')
-                this.loadTriangles();
-            });
+                this.loadTriangles()
+            })
 
-            this.loadTriangles();
+            this.loadTriangles()
         }
 
         clickListener = () => {
             const raycaster = new THREE.Raycaster()
-            // A kattintás eseményfigyelője
+
             document.addEventListener("mousedown", (event) => {
                 const mouse = new THREE.Vector2()
                 mouse.x = (event.clientX / window.innerWidth) * 2 - 1
@@ -120,33 +169,23 @@
                     let selectedItem = null
                     for (let i = 0; i < intersects.length; i++) {
                         const row = intersects[i].object
-                        if (row.geometry.attributes.clickCount.array[0] > 10) continue
+                        if (row.geometry.attributes.clickCount.array[0] > 5) continue
 
                         selectedItem = row
                     }
 
                     if (selectedItem == null) {
-                        console.log('is null')
                         return
                     }
 
-                    console.log(selectedItem)
-
-                    if (selectedItem.geometry.attributes.clickCount.array[0] >= 10) {
-                        if (this.needSubdivide()) {
-                            this.subdivideIco()
-                        }
-                    } else {
+                    console.log(selectedItem.geometry.attributes.clickCount.array[0])
+                    if (selectedItem.geometry.attributes.clickCount.array[0] < 5) {
                         this.nextFace(selectedItem)
                     }
                 }
             })
 
             return this
-        }
-
-        needSubdivide = () => {
-            return false
         }
 
         drawIcosahedron = (result) => {
@@ -172,8 +211,8 @@
 
         clear = () => {
             for (let i = this.scene.children.length - 1; i >= 0; i--) {
-                const obj = this.scene.children[i];
-                this.scene.remove(obj);
+                const obj = this.scene.children[i]
+                this.scene.remove(obj)
             }
         }
 
@@ -197,17 +236,30 @@
         }
 
         updateTriangle(triangle) {
-            const object = this.scene.getObjectByProperty('uuid', triangle.uuid);
-            const percent = 100 - triangle.click * 10
+            const object = this.scene.getObjectByProperty('uuid', triangle.uuid)
+            const percent = 100 - triangle.click * 5
 
             object.geometry.attributes.clickCount.array[0] = triangle.click
             object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
         }
 
+        updateText(allClick, currentClick, level, reload) {
+            document.getElementById('allClick').innerHTML = allClick
+            document.getElementById('currentClick').innerHTML = currentClick
+            document.getElementById('level').innerHTML = level
+            document.getElementById('reload').innerHTML = reload
+            document.getElementById('levelName').innerHTML = this.levelName[level]
+
+            document.getElementById('yourClick').innerHTML = this.yourClick.toString()
+        }
+
         nextFace = (object) => {
-            this.socket.emit('clickTriangle', object.uuid);
+            this.yourClick++
+            setCookie('click', this.yourClick)
+
+            this.socket.emit('clickTriangle', object.uuid)
             const clickCount = object.geometry.attributes.clickCount.array[0]++
-            const percent = 100 - clickCount * 10
+            const percent = 100 - clickCount * 5
 
             object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
         }
@@ -219,7 +271,7 @@
                     color: 0xff0000
                 }), vertices, 10, false)
 
-                const percent = 100 - click * 10
+                const percent = 100 - click * 5
                 material.color.setRGB(percent / 100, percent / 100, percent / 100)
             }
             const clickCount = new Float32Array([click])
@@ -237,7 +289,7 @@
 
         loadTriangles() {
 
-            fetch("http://vps2.insource.hu:21080/triangles", {
+            fetch(this.host + "/triangles", {
                 method: 'GET',
                 redirect: 'follow'
             })
@@ -247,6 +299,29 @@
         }
     }
 
-    new Trinity().clickListener().animate()
+    function setCookie(cname, cvalue) {
+        const d = new Date();
+        d.setTime(d.getTime() + 31536000000);
+        let expires = "expires=" + d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return null;
+    }
+
+    new Narimato().clickListener().animate()
 </script>
 </html>
