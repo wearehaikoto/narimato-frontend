@@ -10,20 +10,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500;700&display=swap" rel="stylesheet">
-
+    <link href="assets/style.css" rel="stylesheet">
 
     <script type="importmap">
         {"imports": {"three": "https://unpkg.com/three@0.138.0/build/three.module.js","OrbitControls": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js"}}
 
 
+    </script>
 
+    <!-- Google tag (gtag.js) -->
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-N6KJR3MQV8"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
 
+        function gtag() {
+            dataLayer.push(arguments);
+        }
 
+        gtag('js', new Date());
 
-
-
-
-
+        gtag('config', 'G-N6KJR3MQV8');
     </script>
 </head>
 
@@ -68,19 +74,6 @@
     }
 </style>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    clifford: '#da373d',
-                }
-            }
-        }
-    }
-</script>
-
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script type="module">
     import * as THREE from "three"
@@ -93,6 +86,15 @@
         camera = null
         controls = null
         yourClick = 0
+        level = 0
+        colors = [
+            [0xFFFFFF, 0xDAE4F5, 0xB4C9EB, 0x8FADE0, 0x6992D6, 0x4477CC],
+            [0x4477CC, 0x4B88AD, 0x52998F, 0x58AA70, 0x5FBB52, 0x66CC33],
+            [0x66CC33, 0x85CF36, 0xA3D33A, 0xC2D63D, 0xE0DA41, 0xFFDD44],
+            [0xFFDD44, 0xD6B83D, 0xAD9236, 0x856D30, 0x5C4729, 0x332222],
+            [0x332222, 0x5C1B2C, 0x851436, 0xAD0E41, 0xD6074B, 0xFF0055],
+            [0xFF0055, 0xFF3377, 0xFF6699, 0xFF99BB, 0xFFCCDD, 0xFFFFFF],
+        ]
         host = 'https://narimato.com:21000'
         socket = io(this.host, {secure: true})
         levelName = ['Realm of Ice', 'The Source', 'Under the Rocks', 'Chase the Sun', 'Unknown Step']
@@ -136,18 +138,19 @@
             this.socket.on("update", (data) => {
                 this.updateTriangle(data.triangle)
                 this.updateText(data.allClick, data.currentClick, data.level, data.reload)
+                this.level = data.level - 1
             })
 
             this.socket.on("reloadTriangle", (data) => {
-                console.log(data)
                 if (data !== undefined) {
                     this.updateText(data.allClick, data.currentClick, data.level, data.reload)
+                    this.level = data.level - 1
                 }
-                console.log('reloadTriangle')
+
                 this.loadTriangles()
             })
 
-            this.loadTriangles()
+            // this.loadTriangles()
         }
 
         clickListener = () => {
@@ -178,7 +181,6 @@
                         return
                     }
 
-                    console.log(selectedItem.geometry.attributes.clickCount.array[0])
                     if (selectedItem.geometry.attributes.clickCount.array[0] < 5) {
                         this.nextFace(selectedItem)
                     }
@@ -237,10 +239,9 @@
 
         updateTriangle(triangle) {
             const object = this.scene.getObjectByProperty('uuid', triangle.uuid)
-            const percent = 100 - triangle.click * 5
 
             object.geometry.attributes.clickCount.array[0] = triangle.click
-            object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
+            this.setColor(object.material.color, triangle.click)
         }
 
         updateText(allClick, currentClick, level, reload) {
@@ -259,9 +260,8 @@
 
             this.socket.emit('clickTriangle', object.uuid)
             const clickCount = object.geometry.attributes.clickCount.array[0]++
-            const percent = 100 - clickCount * 5
 
-            object.material.color.setRGB(percent / 100, percent / 100, percent / 100)
+            this.setColor(object.material.color, clickCount)
         }
 
         drawTriangle = (uuid, parent, material, vertices, click = 1, needBorder = true) => {
@@ -271,8 +271,8 @@
                     color: 0xff0000
                 }), vertices, 10, false)
 
-                const percent = 100 - click * 5
-                material.color.setRGB(percent / 100, percent / 100, percent / 100)
+
+                this.setColor(material.color, click)
             }
             const clickCount = new Float32Array([click])
             const geometry = new THREE.BufferGeometry()
@@ -285,6 +285,10 @@
             if (uuid !== null) triangle.uuid = uuid
 
             parent.add(triangle)
+        }
+
+        setColor(color, click) {
+            color.setHex(this.colors[this.level][click])
         }
 
         loadTriangles() {
