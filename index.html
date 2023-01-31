@@ -55,12 +55,12 @@
     <div class="w-6 h-6" id="toColor"></div>
 </div>
 
-<a href="https://insource.hu" target="_blank">
-    <div class="fixed bottom-0 -right-[88px] w-[120px] h-[32px] transition-all duration-300 flex items-center cursor-pointer bg-white hover:right-0">
-        <img src="/assets/images/is.webp" alt="fejlesztő logója" class="max-w-[32px] p-[8px]">
-        <p class="text-xs text-black">Developed by</p>
-    </div>
-</a>
+<!--<a href="https://insource.hu" target="_blank">-->
+<!--    <div class="fixed bottom-0 -right-[88px] w-[120px] h-[32px] transition-all duration-300 flex items-center cursor-pointer bg-white hover:right-0">-->
+<!--        <img src="/assets/images/is.webp" alt="fejlesztő logója" class="max-w-[32px] p-[8px]">-->
+<!--        <p class="text-xs text-black">Developed by</p>-->
+<!--    </div>-->
+<!--</a>-->
 </body>
 
 <style>
@@ -87,34 +87,20 @@
         renderer = null
         camera = null
         controls = null
+        colors = null
+        levelName = null
         yourClick = 0
         level = 0
-        colors = [
-            [0xFFFFFF, 0xDAE4F5, 0xB4C9EB, 0x8FADE0, 0x6992D6, 0x4477CC],
-            [0x4477CC, 0x4B88AD, 0x52998F, 0x58AA70, 0x5FBB52, 0x66CC33],
-            [0x66CC33, 0x85CF36, 0xA3D33A, 0xC2D63D, 0xE0DA41, 0xFFDD44],
-            [0xFFDD44, 0xD6B83D, 0xAD9236, 0x856D30, 0x5C4729, 0x332222],
-            [0x332222, 0x5C1B2C, 0x851436, 0xAD0E41, 0xD6074B, 0xFF0055],
-            [0xFF0055, 0xFF3377, 0xFF6699, 0xFF99BB, 0xFFCCDD, 0xFFFFFF],
-        ]
-        fromToColor = [
-            ['#FFFFFF', '#4477CC'],
-            ['#4477CC', '#66CC33'],
-            ['#66CC33', '#FFDD44'],
-            ['#FFDD44', '#332222'],
-            ['#332222', '#FF0055'],
-            ['#FF0055', '#FFFFFF'],
-        ]
-        host = 'https://narimato.com:21000'
+        host = 'https://narimato.com:19000'
         socket = io(this.host, {secure: true})
-        levelName = ['Realm of Ice', 'The Source', 'Under the Rocks', 'Chase the Sun', 'Unknown Step']
 
         constructor() {
+            fetch(this.host + '/settings').then(data => this.settingLoaded(data))
 
             this.yourClick = getCookie('click') ?? 0
 
             this.scene = new THREE.Scene()
-            this.scene.background = new THREE.Color(0xcccccc)
+            this.scene.background = new THREE.Color(0xffffff);
             this.scene.fog = new THREE.FogExp2(0xcccccc, 0.002)
 
             this.renderer = new THREE.WebGLRenderer({
@@ -161,6 +147,26 @@
             })
 
             // this.loadTriangles()
+        }
+
+        settingLoaded = (data) => {
+            if (data.status === 200) {
+                data.json().then(finish => {
+                    this.scene.background = new THREE.Color(finish.backgroundColor);
+                    this.colors = [
+                        [finish.lvl1Color1, finish.lvl1Color2, finish.lvl1Color3, finish.lvl1Color4, finish.lvl1Color5, finish.lvl1Color6],
+                        [finish.lvl2Color1, finish.lvl2Color2, finish.lvl2Color3, finish.lvl2Color4, finish.lvl2Color5, finish.lvl2Color6],
+                        [finish.lvl3Color1, finish.lvl3Color2, finish.lvl3Color3, finish.lvl3Color4, finish.lvl3Color5, finish.lvl3Color6],
+                        [finish.lvl4Color1, finish.lvl4Color2, finish.lvl4Color3, finish.lvl4Color4, finish.lvl4Color5, finish.lvl4Color6],
+                        [finish.lvl5Color1, finish.lvl5Color2, finish.lvl5Color3, finish.lvl5Color4, finish.lvl5Color5, finish.lvl5Color6],
+                        [finish.lvl6Color1, finish.lvl6Color2, finish.lvl6Color3, finish.lvl6Color4, finish.lvl6Color5, finish.lvl6Color6],
+                    ]
+
+                    this.levelName = [finish.lvl1Name, finish.lvl2Name, finish.lvl3Name, finish.lvl4Name, finish.lvl5Name, finish.lvl6Name];
+
+                    this.loadTriangles()
+                })
+            }
         }
 
         clickListener = () => {
@@ -222,14 +228,14 @@
             const distance = (new THREE.Vector3(0, 0, 0)).distanceTo(new THREE.Vector3(pos[0], pos[1], pos[2]));
             this.controls.minDistance = distance * 1.1
 
-            this.setFromToColor(this.fromToColor[this.level])
+            this.setFromToColor(this.colors[this.level])
 
             return this
         }
 
         setFromToColor(colors) {
             document.getElementById('fromColor').style.backgroundColor = colors[0]
-            document.getElementById('toColor').style.backgroundColor = colors[1]
+            document.getElementById('toColor').style.backgroundColor = colors[5]
         }
 
         clear = () => {
@@ -309,11 +315,11 @@
         }
 
         setColor(color, click) {
-            color.setHex(this.colors[this.level][click])
+            const hexColor = this.colors[this.level][click].toString().replace('#', '0x')
+            color.setHex(hexColor)
         }
 
         loadTriangles() {
-
             fetch(this.host + "/triangles", {
                 method: 'GET',
                 redirect: 'follow'
@@ -337,10 +343,10 @@
         let ca = decodedCookie.split(';');
         for (let i = 0; i < ca.length; i++) {
             let c = ca[i];
-            while (c.charAt(0) == ' ') {
+            while (c.charAt(0) === ' ') {
                 c = c.substring(1);
             }
-            if (c.indexOf(name) == 0) {
+            if (c.indexOf(name) === 0) {
                 return c.substring(name.length, c.length);
             }
         }
