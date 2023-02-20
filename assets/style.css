@@ -513,8 +513,20 @@ video {
   --tw-backdrop-sepia:  ;
 }
 
+.pointer-events-none {
+  pointer-events: none;
+}
+
 .fixed {
   position: fixed;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
 }
 
 .left-5 {
@@ -537,8 +549,44 @@ video {
   right: -88px;
 }
 
+.left-0 {
+  left: 0px;
+}
+
+.right-0 {
+  right: 0px;
+}
+
+.top-0 {
+  top: 0px;
+}
+
+.top-52 {
+  top: 13rem;
+}
+
+.top-40 {
+  top: 10rem;
+}
+
+.top-20 {
+  top: 5rem;
+}
+
+.top-24 {
+  top: 6rem;
+}
+
+.top-28 {
+  top: 7rem;
+}
+
 .mb-5 {
   margin-bottom: 1.25rem;
+}
+
+.block {
+  display: block;
 }
 
 .flex {
@@ -549,76 +597,74 @@ video {
   display: grid;
 }
 
-.h-\[32px\] {
-  height: 32px;
-}
-
-.h-full {
-  height: 100%;
-}
-
-.h-\[40px\] {
-  height: 40px;
-}
-
-.h-\[30px\] {
-  height: 30px;
-}
-
-.h-\[20px\] {
-  height: 20px;
-}
-
-.h-5 {
-  height: 1.25rem;
-}
-
-.h-10 {
-  height: 2.5rem;
+.hidden {
+  display: none;
 }
 
 .h-6 {
   height: 1.5rem;
 }
 
-.w-\[120px\] {
-  width: 120px;
+.h-\[32px\] {
+  height: 32px;
 }
 
-.w-full {
-  width: 100%;
+.h-\[200px\] {
+  height: 200px;
 }
 
-.w-\[40px\] {
-  width: 40px;
+.h-\[300px\] {
+  height: 300px;
 }
 
-.w-\[30px\] {
-  width: 30px;
+.h-\[400px\] {
+  height: 400px;
 }
 
-.w-\[20px\] {
-  width: 20px;
-}
-
-.w-5 {
-  width: 1.25rem;
-}
-
-.w-10 {
-  width: 2.5rem;
+.h-0 {
+  height: 0px;
 }
 
 .w-6 {
   width: 1.5rem;
 }
 
+.w-\[120px\] {
+  width: 120px;
+}
+
+.w-\[200px\] {
+  width: 200px;
+}
+
+.w-\[400px\] {
+  width: 400px;
+}
+
+.w-0 {
+  width: 0px;
+}
+
 .max-w-\[32px\] {
   max-width: 32px;
 }
 
+.max-w-\[300px\] {
+  max-width: 300px;
+}
+
+.max-w-\[200px\] {
+  max-width: 200px;
+}
+
 .cursor-pointer {
   cursor: pointer;
+}
+
+.select-none {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
 }
 
 .resize {
@@ -641,12 +687,73 @@ video {
   gap: 0.5rem;
 }
 
-.gap-5 {
-  gap: 1.25rem;
-}
-
 .overflow-hidden {
   overflow: hidden;
+}
+
+.border-l-\[50px\] {
+  border-left-width: 50px;
+}
+
+.border-b-\[75px\] {
+  border-bottom-width: 75px;
+}
+
+.border-r-\[50px\] {
+  border-right-width: 50px;
+}
+
+.border-l-\[150px\] {
+  border-left-width: 150px;
+}
+
+.border-b-\[175px\] {
+  border-bottom-width: 175px;
+}
+
+.border-r-\[1050px\] {
+  border-right-width: 1050px;
+}
+
+.border-r-\[150px\] {
+  border-right-width: 150px;
+}
+
+.border-l-\[250px\] {
+  border-left-width: 250px;
+}
+
+.border-b-\[250px\] {
+  border-bottom-width: 250px;
+}
+
+.border-r-\[250px\] {
+  border-right-width: 250px;
+}
+
+.border-b-\[300px\] {
+  border-bottom-width: 300px;
+}
+
+.border-b-\[500px\] {
+  border-bottom-width: 500px;
+}
+
+.border-b-\[400px\] {
+  border-bottom-width: 400px;
+}
+
+.border-l-transparent {
+  border-left-color: transparent;
+}
+
+.border-b-yellow-500 {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(234 179 8 / var(--tw-border-opacity));
+}
+
+.border-r-transparent {
+  border-right-color: transparent;
 }
 
 .bg-white {
@@ -654,14 +761,22 @@ video {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.bg-\[red\] {
+.bg-black {
   --tw-bg-opacity: 1;
-  background-color: rgb(255 0 0 / var(--tw-bg-opacity));
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity));
 }
 
-.bg-\[blue\] {
+.bg-black\/10 {
+  background-color: rgb(0 0 0 / 0.1);
+}
+
+.bg-amber-300 {
   --tw-bg-opacity: 1;
-  background-color: rgb(0 0 255 / var(--tw-bg-opacity));
+  background-color: rgb(252 211 77 / var(--tw-bg-opacity));
+}
+
+.bg-opacity-75 {
+  --tw-bg-opacity: 0.75;
 }
 
 .p-3 {
@@ -676,14 +791,13 @@ video {
   text-align: left;
 }
 
+.text-center {
+  text-align: center;
+}
+
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
-}
-
-.text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
 }
 
 .text-2xl {
@@ -691,9 +805,24 @@ video {
   line-height: 2rem;
 }
 
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
 .text-black {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .transition-all {
